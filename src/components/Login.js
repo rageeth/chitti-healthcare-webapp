@@ -26,24 +26,48 @@ const Login = () => {
         return;
       }
 
-      console.log('🌐 Attempting API login to:', '/healthcare/hospital/login');
-      const response = await axios.post('/healthcare/hospital/login', {
-        email: data.email,
-        password: data.password
-      });
+      // Check if this is a super admin login
+      const isSuperAdmin = data.email === 'superadmin@chitti.com';
+      
+      if (isSuperAdmin) {
+        console.log('👑 Super admin login detected');
+        const response = await axios.post('/healthcare/super-admin/login', {
+          email: data.email,
+          password: data.password
+        });
 
-      console.log('📡 API Response:', response.data);
+        console.log('📡 Super Admin API Response:', response.data);
 
-      if (response.data.success) {
-        console.log('✅ Hospital admin login successful');
-        localStorage.setItem('healthcareToken', response.data.token);
-        localStorage.setItem('providerId', response.data.admin.provider_id);
-        localStorage.setItem('userEmail', data.email);
-        localStorage.setItem('userRole', 'hospital_admin');
-        localStorage.setItem('adminName', response.data.admin.name);
-        localStorage.setItem('providerName', response.data.admin.provider_name);
-        toast.success('Login successful! Welcome to your healthcare dashboard.');
-        navigate('/dashboard');
+        if (response.data.success) {
+          console.log('✅ Super admin login successful');
+          localStorage.setItem('superAdminToken', response.data.token);
+          localStorage.setItem('userEmail', data.email);
+          localStorage.setItem('userRole', 'super_admin');
+          toast.success('Super admin login successful! Welcome to the admin dashboard.');
+          navigate('/super-admin');
+          return;
+        }
+      } else {
+        // Regular hospital admin login
+        console.log('🏥 Hospital admin login detected');
+        const response = await axios.post('/healthcare/hospital/login', {
+          email: data.email,
+          password: data.password
+        });
+
+        console.log('📡 Hospital API Response:', response.data);
+
+        if (response.data.success) {
+          console.log('✅ Hospital admin login successful');
+          localStorage.setItem('healthcareToken', response.data.token);
+          localStorage.setItem('providerId', response.data.admin.provider_id);
+          localStorage.setItem('userEmail', data.email);
+          localStorage.setItem('userRole', 'hospital_admin');
+          localStorage.setItem('adminName', response.data.admin.name);
+          localStorage.setItem('providerName', response.data.admin.provider_name);
+          toast.success('Login successful! Welcome to your healthcare dashboard.');
+          navigate('/dashboard');
+        }
       }
     } catch (error) {
       console.error('❌ Login error:', error);

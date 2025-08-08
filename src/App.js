@@ -43,12 +43,8 @@ const SuperAdminRoute = ({ children }) => {
     timestamp: new Date().toISOString()
   });
 
-  if (!superAdminToken) {
-    console.log('❌ No super admin token found, redirecting to login');
-    return <Navigate to="/login" replace />;
-  }
-
-  console.log('✅ Super admin token found, allowing access');
+  // Don't redirect - let the SuperAdmin component handle its own authentication
+  console.log('✅ Super admin route - allowing component to handle auth');
   return children;
 };
 

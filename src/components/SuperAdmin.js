@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 
@@ -12,14 +11,8 @@ const SuperAdmin = () => {
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [adminDetails, setAdminDetails] = useState({});
   const [showAdminDetails, setShowAdminDetails] = useState(false);
-  const navigate = useNavigate();
 
-  useEffect(() => {
-    console.log('👑 Super Admin Dashboard loaded');
-    checkAuthStatus();
-  }, []);
-
-  const checkAuthStatus = () => {
+  const checkAuthStatus = useCallback(() => {
     const token = localStorage.getItem('superAdminToken');
     if (token) {
       setIsLoggedIn(true);
@@ -27,7 +20,12 @@ const SuperAdmin = () => {
     } else {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    console.log('👑 Super Admin Dashboard loaded');
+    checkAuthStatus();
+  }, [checkAuthStatus]);
 
   const handleLogin = async (e) => {
     e.preventDefault();

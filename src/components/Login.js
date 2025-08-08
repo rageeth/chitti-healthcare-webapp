@@ -12,7 +12,7 @@ const Login = () => {
   const onSubmit = async (data) => {
     console.log('🚀 Login attempt started:', { email: data.email, timestamp: new Date().toISOString() });
     setIsLoading(true);
-    
+
     try {
       // Demo login fallback
       if (data.email === 'demo@hospital.com' && data.password === 'demo123') {
@@ -20,16 +20,14 @@ const Login = () => {
         localStorage.setItem('healthcareToken', 'demo-token-123');
         localStorage.setItem('providerId', 'demo-provider-123');
         localStorage.setItem('userEmail', data.email);
+        localStorage.setItem('userRole', 'demo_admin');
         toast.success('Demo login successful! Welcome to the healthcare dashboard.');
         navigate('/dashboard');
         return;
       }
 
-      console.log('🌐 Attempting API login to:', '/healthcare/admin/login');
-      
-      // For now, we'll use a simple login
-      // In production, this should be a proper authentication endpoint
-      const response = await axios.post('/healthcare/admin/login', {
+      console.log('🌐 Attempting API login to:', '/healthcare/hospital/login');
+      const response = await axios.post('/healthcare/hospital/login', {
         email: data.email,
         password: data.password
       });
@@ -37,11 +35,14 @@ const Login = () => {
       console.log('📡 API Response:', response.data);
 
       if (response.data.success) {
-        console.log('✅ API login successful');
+        console.log('✅ Hospital admin login successful');
         localStorage.setItem('healthcareToken', response.data.token);
-        localStorage.setItem('providerId', response.data.provider_id);
+        localStorage.setItem('providerId', response.data.admin.provider_id);
         localStorage.setItem('userEmail', data.email);
-        toast.success('Login successful!');
+        localStorage.setItem('userRole', 'hospital_admin');
+        localStorage.setItem('adminName', response.data.admin.name);
+        localStorage.setItem('providerName', response.data.admin.provider_name);
+        toast.success('Login successful! Welcome to your healthcare dashboard.');
         navigate('/dashboard');
       }
     } catch (error) {
@@ -56,8 +57,18 @@ const Login = () => {
           headers: error.config?.headers
         }
       });
-      
-      if (error.response?.status === 404) {
+
+      if (error.response?.status === 401) {
+        toast.error('Invalid email or password. Please check your credentials.');
+      } else if (error.response?.status === 403) {
+        if (error.response?.data?.error === 'NOT_APPROVED') {
+          toast.error('Your healthcare facility is pending approval. Please contact the administrator.');
+        } else if (error.response?.data?.error === 'INACTIVE_PROVIDER') {
+          toast.error('Your healthcare facility is inactive. Please contact the administrator.');
+        } else {
+          toast.error('Access denied. Please contact the administrator.');
+        }
+      } else if (error.response?.status === 404) {
         toast.error('API endpoint not found. Please check the backend configuration.');
       } else if (error.response?.status === 500) {
         toast.error('Server error. Please try again later.');

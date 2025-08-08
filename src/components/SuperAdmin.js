@@ -13,6 +13,8 @@ const SuperAdmin = () => {
   const [adminDetails, setAdminDetails] = useState({});
   const [showAdminDetails, setShowAdminDetails] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showCredentials, setShowCredentials] = useState(false);
+  const [credentials, setCredentials] = useState({});
 
   const handleLogout = useCallback(() => {
     localStorage.removeItem('superAdminToken');
@@ -107,6 +109,13 @@ const SuperAdmin = () => {
       
       if (response.data.success) {
         toast.success('Registration approved successfully!');
+        
+        // Show credentials if available
+        if (response.data.admin_credentials) {
+          setCredentials(response.data.admin_credentials);
+          setShowCredentials(true);
+        }
+        
         fetchData(); // Refresh data
       } else {
         toast.error('Failed to approve registration');
@@ -476,6 +485,63 @@ const SuperAdmin = () => {
                 <span>🔑</span> Reset Password
               </button>
               <button onClick={() => setShowAdminDetails(false)} className="cancel-btn">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Admin Credentials Modal */}
+      {showCredentials && (
+        <div className="modal-overlay" onClick={() => setShowCredentials(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>🔑 Admin Credentials Generated</h2>
+              <button onClick={() => setShowCredentials(false)} className="close-btn">×</button>
+            </div>
+            <div className="modal-body">
+              <div className="credentials-info">
+                <div className="info-box">
+                  <p>✅ Healthcare provider has been approved successfully!</p>
+                  <p>Admin credentials have been generated. Please save these credentials securely:</p>
+                </div>
+                
+                <div className="credentials-display">
+                  <div className="credential-item">
+                    <span className="label">📧 Email/Username:</span>
+                    <span className="value">{credentials.username}</span>
+                  </div>
+                  <div className="credential-item">
+                    <span className="label">🔑 Password:</span>
+                    <span className="value password-value">{credentials.password}</span>
+                  </div>
+                </div>
+                
+                <div className="credentials-warning">
+                  <p>⚠️ <strong>Important:</strong></p>
+                  <ul>
+                    <li>These credentials are only shown once</li>
+                    <li>Share them securely with the healthcare provider</li>
+                    <li>They can use these credentials to login at the main login page</li>
+                    <li>You can reset the password later if needed</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button 
+                onClick={() => {
+                  // Copy credentials to clipboard
+                  const text = `Email: ${credentials.username}\nPassword: ${credentials.password}`;
+                  navigator.clipboard.writeText(text);
+                  toast.success('Credentials copied to clipboard!');
+                }}
+                className="copy-btn"
+              >
+                <span>📋</span> Copy to Clipboard
+              </button>
+              <button onClick={() => setShowCredentials(false)} className="cancel-btn">
                 Close
               </button>
             </div>

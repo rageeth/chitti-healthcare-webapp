@@ -10,8 +10,23 @@ const Login = () => {
   const { register, handleSubmit, formState: { errors } } = useForm();
 
   const onSubmit = async (data) => {
+    console.log('🚀 Login attempt started:', { email: data.email, timestamp: new Date().toISOString() });
     setIsLoading(true);
+    
     try {
+      // Demo login fallback
+      if (data.email === 'demo@hospital.com' && data.password === 'demo123') {
+        console.log('✅ Demo login successful');
+        localStorage.setItem('healthcareToken', 'demo-token-123');
+        localStorage.setItem('providerId', 'demo-provider-123');
+        localStorage.setItem('userEmail', data.email);
+        toast.success('Demo login successful! Welcome to the healthcare dashboard.');
+        navigate('/dashboard');
+        return;
+      }
+
+      console.log('🌐 Attempting API login to:', '/healthcare/admin/login');
+      
       // For now, we'll use a simple login
       // In production, this should be a proper authentication endpoint
       const response = await axios.post('/healthcare/admin/login', {
@@ -19,17 +34,41 @@ const Login = () => {
         password: data.password
       });
 
+      console.log('📡 API Response:', response.data);
+
       if (response.data.success) {
+        console.log('✅ API login successful');
         localStorage.setItem('healthcareToken', response.data.token);
         localStorage.setItem('providerId', response.data.provider_id);
+        localStorage.setItem('userEmail', data.email);
         toast.success('Login successful!');
         navigate('/dashboard');
       }
     } catch (error) {
-      console.error('Login error:', error);
-      toast.error('Login failed. Please check your credentials.');
+      console.error('❌ Login error:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.config?.headers
+        }
+      });
+      
+      if (error.response?.status === 404) {
+        toast.error('API endpoint not found. Please check the backend configuration.');
+      } else if (error.response?.status === 500) {
+        toast.error('Server error. Please try again later.');
+      } else if (error.code === 'NETWORK_ERROR') {
+        toast.error('Network error. Please check your connection.');
+      } else {
+        toast.error(`Login failed: ${error.message}`);
+      }
     } finally {
       setIsLoading(false);
+      console.log('🏁 Login attempt completed');
     }
   };
 
@@ -92,6 +131,24 @@ const Login = () => {
             Email: demo@hospital.com<br />
             Password: demo123
           </p>
+          <button 
+            onClick={() => {
+              console.log('🎯 Demo login button clicked');
+              document.getElementById('email').value = 'demo@hospital.com';
+              document.getElementById('password').value = 'demo123';
+            }}
+            style={{ 
+              marginTop: '0.5rem', 
+              padding: '0.5rem 1rem', 
+              background: '#667eea', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '3px', 
+              cursor: 'pointer' 
+            }}
+          >
+            Fill Demo Credentials
+          </button>
         </div>
       </div>
     </div>

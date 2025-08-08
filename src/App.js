@@ -10,6 +10,7 @@ import ProviderRegistration from './components/ProviderRegistration';
 import DoctorManagement from './components/DoctorManagement';
 import AppointmentManagement from './components/AppointmentManagement';
 import AvailabilityManagement from './components/AvailabilityManagement';
+import SuperAdmin from './components/SuperAdmin';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -29,6 +30,25 @@ const ProtectedRoute = ({ children }) => {
   }
 
   console.log('✅ Token found, allowing access');
+  return children;
+};
+
+// Super Admin Route Component
+const SuperAdminRoute = ({ children }) => {
+  const superAdminToken = localStorage.getItem('superAdminToken');
+  
+  console.log('👑 Super Admin Route Check:', { 
+    hasSuperAdminToken: !!superAdminToken,
+    path: window.location.pathname,
+    timestamp: new Date().toISOString()
+  });
+
+  if (!superAdminToken) {
+    console.log('❌ No super admin token found, redirecting to login');
+    return <Navigate to="/login" replace />;
+  }
+
+  console.log('✅ Super admin token found, allowing access');
   return children;
 };
 
@@ -86,6 +106,14 @@ function App() {
               <ProtectedRoute>
                 <AvailabilityManagement />
               </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/super-admin" 
+            element={
+              <SuperAdminRoute>
+                <SuperAdmin />
+              </SuperAdminRoute>
             } 
           />
         </Routes>

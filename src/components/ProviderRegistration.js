@@ -6,34 +6,122 @@ import axios from 'axios';
 
 const ProviderRegistration = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [registrationStatus, setRegistrationStatus] = useState('form'); // 'form', 'pending', 'success'
   const navigate = useNavigate();
   const { register, handleSubmit, formState: { errors } } = useForm();
 
   const onSubmit = async (data) => {
+    console.log('🏥 Registration attempt started:', { 
+      facilityName: data.name, 
+      email: data.email,
+      timestamp: new Date().toISOString() 
+    });
+    
     setIsLoading(true);
     try {
       const response = await axios.post('/healthcare/provider/register', {
         name: data.name,
         type: data.type,
         address: data.address,
-        location_lat: parseFloat(data.latitude) || null,
-        location_lng: parseFloat(data.longitude) || null,
         phone: data.phone,
         email: data.email,
         website: data.website || null
       });
 
+      console.log('✅ Registration API response:', response.data);
+
       if (response.data.success) {
-        toast.success('Healthcare provider registered successfully!');
-        navigate('/login');
+        console.log('✅ Registration successful');
+        setRegistrationStatus('success');
+        toast.success('Registration submitted successfully! Awaiting admin approval.');
+      } else {
+        console.log('❌ Registration failed:', response.data.message);
+        toast.error(response.data.message || 'Registration failed. Please try again.');
       }
     } catch (error) {
-      console.error('Registration error:', error);
-      toast.error('Registration failed. Please try again.');
+      console.error('❌ Registration error:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method
+        }
+      });
+      
+      if (error.response?.status === 409) {
+        toast.error('Email already registered. Please use a different email or login.');
+      } else if (error.response?.status === 400) {
+        toast.error('Invalid data. Please check your information.');
+      } else if (error.code === 'NETWORK_ERROR') {
+        toast.error('Network error. Please check your connection.');
+      } else {
+        toast.error(`Registration failed: ${error.message}`);
+      }
     } finally {
       setIsLoading(false);
+      console.log('🏁 Registration attempt completed');
     }
   };
+
+  // Success/Verification Pending Screen
+  if (registrationStatus === 'success') {
+    return (
+      <div className="login-container">
+        <div className="login-card">
+          <div style={{ textAlign: 'center', padding: '2rem' }}>
+            <h1 style={{ color: '#28a745', marginBottom: '1rem' }}>✅ Registration Submitted!</h1>
+            <p style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>
+              Your healthcare facility registration has been submitted successfully.
+            </p>
+            <div style={{ background: '#f8f9fa', padding: '1rem', borderRadius: '5px', marginBottom: '2rem' }}>
+              <h3 style={{ color: '#ffc107', marginBottom: '0.5rem' }}>⏳ Verification Pending</h3>
+              <p style={{ fontSize: '0.9rem', color: '#666' }}>
+                Our admin team will review your registration and approve it within 24-48 hours.<br />
+                You'll receive an email notification once approved.
+              </p>
+            </div>
+            <div style={{ marginBottom: '1rem' }}>
+              <p style={{ fontSize: '0.9rem', color: '#666' }}>
+                <strong>What happens next?</strong><br />
+                • Admin reviews your facility details<br />
+                • Approval email sent to your registered email<br />
+                • You can then login and start using the platform
+              </p>
+            </div>
+            <button 
+              onClick={() => navigate('/login')}
+              style={{
+                padding: '0.75rem 1.5rem',
+                background: '#667eea',
+                color: 'white',
+                border: 'none',
+                borderRadius: '5px',
+                cursor: 'pointer',
+                marginRight: '1rem'
+              }}
+            >
+              Go to Login
+            </button>
+            <button 
+              onClick={() => setRegistrationStatus('form')}
+              style={{
+                padding: '0.75rem 1.5rem',
+                background: '#6c757d',
+                color: 'white',
+                border: 'none',
+                borderRadius: '5px',
+                cursor: 'pointer'
+              }}
+            >
+              Register Another
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="login-container">
@@ -90,30 +178,6 @@ const ProviderRegistration = () => {
             {errors.address && <span style={{color: 'red', fontSize: '0.8rem'}}>{errors.address.message}</span>}
           </div>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="latitude">Latitude</label>
-              <input
-                type="number"
-                step="any"
-                id="latitude"
-                {...register('latitude')}
-                placeholder="e.g., 12.9716"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="longitude">Longitude</label>
-              <input
-                type="number"
-                step="any"
-                id="longitude"
-                {...register('longitude')}
-                placeholder="e.g., 77.5946"
-              />
-            </div>
-          </div>
-
           <div className="form-group">
             <label htmlFor="phone">Phone Number *</label>
             <input
@@ -159,7 +223,7 @@ const ProviderRegistration = () => {
           </div>
 
           <button type="submit" className="btn" disabled={isLoading}>
-            {isLoading ? 'Registering...' : 'Register Provider'}
+            {isLoading ? 'Submitting Registration...' : 'Register Provider'}
           </button>
         </form>
 

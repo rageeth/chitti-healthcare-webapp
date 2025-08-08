@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import axios from 'axios';
+import api from '../api/axios';
 
 const SuperAdmin = () => {
   const [pendingRegistrations, setPendingRegistrations] = useState([]);
@@ -28,11 +28,11 @@ const SuperAdmin = () => {
       const headers = { Authorization: `Bearer ${token}` };
       
       // Fetch pending registrations
-      const pendingResponse = await axios.get('/healthcare/admin/pending-registrations', { headers });
+      const pendingResponse = await api.get('/healthcare/admin/pending-registrations', { headers });
       setPendingRegistrations(pendingResponse.data.registrations || []);
       
       // Fetch approved providers
-      const approvedResponse = await axios.get('/healthcare/admin/approved-providers', { headers });
+      const approvedResponse = await api.get('/healthcare/admin/approved-providers', { headers });
       setApprovedProviders(approvedResponse.data.providers || []);
       
       console.log('✅ Super admin data loaded:', {
@@ -74,7 +74,7 @@ const SuperAdmin = () => {
     try {
       console.log('🔐 Super admin login attempt:', loginForm.email);
       
-      const response = await axios.post('/healthcare/super-admin/login', loginForm);
+      const response = await api.post('/healthcare/super-admin/login', loginForm);
       
       if (response.data.success) {
         console.log('✅ Super admin login successful');
@@ -98,7 +98,7 @@ const SuperAdmin = () => {
       const token = localStorage.getItem('superAdminToken');
       const headers = { Authorization: `Bearer ${token}` };
       
-      const response = await axios.post(`/healthcare/admin/approve-registration/${registrationId}`, {}, { headers });
+      const response = await api.post(`/healthcare/admin/approve-registration/${registrationId}`, {}, { headers });
       
       if (response.data.success) {
         toast.success('Registration approved successfully! Admin credentials sent via email.');
@@ -123,7 +123,7 @@ const SuperAdmin = () => {
       const token = localStorage.getItem('superAdminToken');
       const headers = { Authorization: `Bearer ${token}` };
       
-      const response = await axios.post(`/healthcare/admin/reject-registration/${registrationId}`, {
+      const response = await api.post(`/healthcare/admin/reject-registration/${registrationId}`, {
         reason: reason
       }, { headers });
       
@@ -149,7 +149,7 @@ const SuperAdmin = () => {
       const token = localStorage.getItem('superAdminToken');
       const headers = { Authorization: `Bearer ${token}` };
       
-      const response = await axios.post(`/healthcare/admin/reset-password/${adminId}`, {}, { headers });
+      const response = await api.post(`/healthcare/admin/reset-password/${adminId}`, {}, { headers });
       
       if (response.data.success) {
         toast.success('Password reset successfully! New credentials sent via email.');
@@ -173,7 +173,7 @@ const SuperAdmin = () => {
       const token = localStorage.getItem('superAdminToken');
       const headers = { Authorization: `Bearer ${token}` };
       
-      const response = await axios.get(`/healthcare/admin/${adminId}`, { headers });
+      const response = await api.get(`/healthcare/admin/${adminId}`, { headers });
       
       if (response.data.success) {
         setAdminDetails(response.data.admin);

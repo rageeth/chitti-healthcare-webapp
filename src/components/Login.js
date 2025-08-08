@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import axios from 'axios';
+import api from '../api/axios';
 
 const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -31,7 +31,7 @@ const Login = () => {
       
       if (isSuperAdmin) {
         console.log('👑 Super admin login detected');
-        const response = await axios.post('/healthcare/super-admin/login', {
+        const response = await api.post('/healthcare/super-admin/login', {
           email: data.email,
           password: data.password
         });
@@ -50,7 +50,7 @@ const Login = () => {
       } else {
         // Regular hospital admin login
         console.log('🏥 Hospital admin login detected');
-        const response = await axios.post('/healthcare/hospital/login', {
+        const response = await api.post('/healthcare/hospital/login', {
           email: data.email,
           password: data.password
         });

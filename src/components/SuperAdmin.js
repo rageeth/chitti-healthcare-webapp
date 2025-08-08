@@ -15,6 +15,8 @@ const SuperAdmin = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showCredentials, setShowCredentials] = useState(false);
   const [credentials, setCredentials] = useState({});
+  const [showResetCredentials, setShowResetCredentials] = useState(false);
+  const [resetCredentials, setResetCredentials] = useState({});
 
   const handleLogout = useCallback(() => {
     localStorage.removeItem('superAdminToken');
@@ -169,7 +171,16 @@ const SuperAdmin = () => {
       const response = await api.post(`/healthcare/admin/reset-password/${adminId}`, {}, { headers });
       
       if (response.data.success) {
-        toast.success('Password reset successfully! New password sent to admin email.');
+        toast.success('Password reset successfully!');
+        
+        // Show new password if available
+        if (response.data.new_password) {
+          setResetCredentials({
+            email: response.data.admin?.email || 'Admin Email',
+            password: response.data.new_password
+          });
+          setShowResetCredentials(true);
+        }
       } else {
         toast.error('Failed to reset password');
       }
@@ -546,10 +557,67 @@ const SuperAdmin = () => {
               </button>
             </div>
           </div>
-        </div>
-      )}
-    </div>
-  );
-};
+                 </div>
+       )}
+
+       {/* Reset Password Credentials Modal */}
+       {showResetCredentials && (
+         <div className="modal-overlay" onClick={() => setShowResetCredentials(false)}>
+           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+             <div className="modal-header">
+               <h2>🔑 Password Reset Successful</h2>
+               <button onClick={() => setShowResetCredentials(false)} className="close-btn">×</button>
+             </div>
+             <div className="modal-body">
+               <div className="credentials-info">
+                 <div className="info-box">
+                   <p>✅ Password has been reset successfully!</p>
+                   <p>New credentials have been generated. Please share these securely:</p>
+                 </div>
+                 
+                 <div className="credentials-display">
+                   <div className="credential-item">
+                     <span className="label">📧 Email:</span>
+                     <span className="value">{resetCredentials.email}</span>
+                   </div>
+                   <div className="credential-item">
+                     <span className="label">🔑 New Password:</span>
+                     <span className="value password-value">{resetCredentials.password}</span>
+                   </div>
+                 </div>
+                 
+                 <div className="credentials-warning">
+                   <p>⚠️ <strong>Important:</strong></p>
+                   <ul>
+                     <li>This new password is only shown once</li>
+                     <li>Share it securely with the healthcare provider</li>
+                     <li>They can use these credentials to login immediately</li>
+                     <li>The old password is no longer valid</li>
+                   </ul>
+                 </div>
+               </div>
+             </div>
+             <div className="modal-footer">
+               <button 
+                 onClick={() => {
+                   // Copy credentials to clipboard
+                   const text = `Email: ${resetCredentials.email}\nNew Password: ${resetCredentials.password}`;
+                   navigator.clipboard.writeText(text);
+                   toast.success('New credentials copied to clipboard!');
+                 }}
+                 className="copy-btn"
+               >
+                 <span>📋</span> Copy to Clipboard
+               </button>
+               <button onClick={() => setShowResetCredentials(false)} className="cancel-btn">
+                 Close
+               </button>
+             </div>
+           </div>
+         </div>
+       )}
+     </div>
+   );
+ };
 
 export default SuperAdmin; 

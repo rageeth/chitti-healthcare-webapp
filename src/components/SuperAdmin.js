@@ -55,12 +55,15 @@ const SuperAdmin = () => {
     try {
       console.log('📊 Fetching super admin data...');
       
+      const token = localStorage.getItem('superAdminToken');
+      const headers = { Authorization: `Bearer ${token}` };
+      
       // Fetch pending registrations
-      const pendingResponse = await axios.get('/healthcare/admin/pending-registrations');
+      const pendingResponse = await axios.get('/healthcare/admin/pending-registrations', { headers });
       setPendingRegistrations(pendingResponse.data.registrations || []);
       
       // Fetch approved providers
-      const approvedResponse = await axios.get('/healthcare/admin/approved-providers');
+      const approvedResponse = await axios.get('/healthcare/admin/approved-providers', { headers });
       setApprovedProviders(approvedResponse.data.providers || []);
       
       console.log('✅ Super admin data loaded:', {
@@ -69,7 +72,12 @@ const SuperAdmin = () => {
       });
     } catch (error) {
       console.error('❌ Error fetching super admin data:', error);
-      toast.error('Failed to load data. Please refresh the page.');
+      if (error.response?.status === 401) {
+        toast.error('Session expired. Please login again.');
+        handleLogout();
+      } else {
+        toast.error('Failed to load data. Please refresh the page.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -79,7 +87,10 @@ const SuperAdmin = () => {
     try {
       console.log('✅ Approving registration:', registrationId);
       
-      const response = await axios.post(`/healthcare/admin/approve-registration/${registrationId}`);
+      const token = localStorage.getItem('superAdminToken');
+      const headers = { Authorization: `Bearer ${token}` };
+      
+      const response = await axios.post(`/healthcare/admin/approve-registration/${registrationId}`, {}, { headers });
       
       if (response.data.success) {
         toast.success('Registration approved successfully! Admin credentials sent via email.');
@@ -88,7 +99,12 @@ const SuperAdmin = () => {
       }
     } catch (error) {
       console.error('❌ Error approving registration:', error);
-      toast.error('Failed to approve registration.');
+      if (error.response?.status === 401) {
+        toast.error('Session expired. Please login again.');
+        handleLogout();
+      } else {
+        toast.error('Failed to approve registration.');
+      }
     }
   };
 
@@ -96,9 +112,12 @@ const SuperAdmin = () => {
     try {
       console.log('❌ Rejecting registration:', registrationId, reason);
       
+      const token = localStorage.getItem('superAdminToken');
+      const headers = { Authorization: `Bearer ${token}` };
+      
       const response = await axios.post(`/healthcare/admin/reject-registration/${registrationId}`, {
         reason: reason
-      });
+      }, { headers });
       
       if (response.data.success) {
         toast.success('Registration rejected.');
@@ -106,7 +125,12 @@ const SuperAdmin = () => {
       }
     } catch (error) {
       console.error('❌ Error rejecting registration:', error);
-      toast.error('Failed to reject registration.');
+      if (error.response?.status === 401) {
+        toast.error('Session expired. Please login again.');
+        handleLogout();
+      } else {
+        toast.error('Failed to reject registration.');
+      }
     }
   };
 
@@ -114,7 +138,10 @@ const SuperAdmin = () => {
     try {
       console.log('🔑 Resetting password for admin:', adminId);
       
-      const response = await axios.post(`/healthcare/admin/reset-password/${adminId}`);
+      const token = localStorage.getItem('superAdminToken');
+      const headers = { Authorization: `Bearer ${token}` };
+      
+      const response = await axios.post(`/healthcare/admin/reset-password/${adminId}`, {}, { headers });
       
       if (response.data.success) {
         toast.success('Password reset successfully! New credentials sent via email.');
@@ -122,7 +149,12 @@ const SuperAdmin = () => {
       }
     } catch (error) {
       console.error('❌ Error resetting password:', error);
-      toast.error('Failed to reset password.');
+      if (error.response?.status === 401) {
+        toast.error('Session expired. Please login again.');
+        handleLogout();
+      } else {
+        toast.error('Failed to reset password.');
+      }
     }
   };
 
@@ -130,7 +162,10 @@ const SuperAdmin = () => {
     try {
       console.log('👤 Fetching admin details:', adminId);
       
-      const response = await axios.get(`/healthcare/admin/${adminId}`);
+      const token = localStorage.getItem('superAdminToken');
+      const headers = { Authorization: `Bearer ${token}` };
+      
+      const response = await axios.get(`/healthcare/admin/${adminId}`, { headers });
       
       if (response.data.success) {
         setAdminDetails(response.data.admin);
@@ -138,7 +173,12 @@ const SuperAdmin = () => {
       }
     } catch (error) {
       console.error('❌ Error fetching admin details:', error);
-      toast.error('Failed to fetch admin details.');
+      if (error.response?.status === 401) {
+        toast.error('Session expired. Please login again.');
+        handleLogout();
+      } else {
+        toast.error('Failed to fetch admin details.');
+      }
     }
   };
 

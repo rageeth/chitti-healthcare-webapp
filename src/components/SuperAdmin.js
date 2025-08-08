@@ -4,6 +4,25 @@ import api from '../api/axios';
 import './SuperAdmin.css';
 
 const SuperAdmin = () => {
+  // CSP-compliant clipboard fallback function
+  const copyToClipboardFallback = (text) => {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      document.execCommand('copy');
+      toast.success('Credentials copied to clipboard!');
+    } catch (err) {
+      toast.error('Failed to copy credentials. Please copy manually.');
+    }
+    document.body.removeChild(textArea);
+  };
+
   const [pendingRegistrations, setPendingRegistrations] = useState([]);
   const [approvedProviders, setApprovedProviders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -518,16 +537,23 @@ const SuperAdmin = () => {
                   <p>Admin credentials have been generated. Please save these credentials securely:</p>
                 </div>
                 
-                <div className="credentials-display">
-                  <div className="credential-item">
-                    <span className="label">📧 Email/Username:</span>
-                    <span className="value">{credentials.username}</span>
-                  </div>
-                  <div className="credential-item">
-                    <span className="label">🔑 Password:</span>
-                    <span className="value password-value">{credentials.password}</span>
-                  </div>
-                </div>
+                                 <div className="credentials-display">
+                   <div className="credential-item">
+                     <span className="label">📧 Email/Username:</span>
+                     <span className="value">{credentials.username}</span>
+                   </div>
+                   <div className="credential-item">
+                     <span className="label">🔑 Password:</span>
+                     <span className="value password-value">{credentials.password}</span>
+                   </div>
+                 </div>
+                 
+                 {/* Backup text display for CSP issues */}
+                 <div className="credentials-text-backup">
+                   <p><strong>Credentials (copy manually if needed):</strong></p>
+                   <p>Email: {credentials.username}</p>
+                   <p>Password: {credentials.password}</p>
+                 </div>
                 
                 <div className="credentials-warning">
                   <p>⚠️ <strong>Important:</strong></p>
@@ -541,15 +567,24 @@ const SuperAdmin = () => {
               </div>
             </div>
             <div className="modal-footer">
-              <button 
-                onClick={() => {
-                  // Copy credentials to clipboard
-                  const text = `Email: ${credentials.username}\nPassword: ${credentials.password}`;
-                  navigator.clipboard.writeText(text);
-                  toast.success('Credentials copied to clipboard!');
-                }}
-                className="copy-btn"
-              >
+                             <button 
+                 onClick={() => {
+                   // Copy credentials to clipboard - CSP compliant
+                   const text = `Email: ${credentials.username}\nPassword: ${credentials.password}`;
+                   if (navigator.clipboard && window.isSecureContext) {
+                     navigator.clipboard.writeText(text).then(() => {
+                       toast.success('Credentials copied to clipboard!');
+                     }).catch(() => {
+                       // Fallback for older browsers
+                       copyToClipboardFallback(text);
+                     });
+                   } else {
+                     // Fallback for non-secure contexts
+                     copyToClipboardFallback(text);
+                   }
+                 }}
+                 className="copy-btn"
+               >
                 <span>📋</span> Copy to Clipboard
               </button>
               <button onClick={() => setShowCredentials(false)} className="cancel-btn">
@@ -586,6 +621,13 @@ const SuperAdmin = () => {
                    </div>
                  </div>
                  
+                 {/* Backup text display for CSP issues */}
+                 <div className="credentials-text-backup">
+                   <p><strong>New Credentials (copy manually if needed):</strong></p>
+                   <p>Email: {resetCredentials.email}</p>
+                   <p>New Password: {resetCredentials.password}</p>
+                 </div>
+                 
                  <div className="credentials-warning">
                    <p>⚠️ <strong>Important:</strong></p>
                    <ul>
@@ -600,10 +642,19 @@ const SuperAdmin = () => {
              <div className="modal-footer">
                <button 
                  onClick={() => {
-                   // Copy credentials to clipboard
+                   // Copy credentials to clipboard - CSP compliant
                    const text = `Email: ${resetCredentials.email}\nNew Password: ${resetCredentials.password}`;
-                   navigator.clipboard.writeText(text);
-                   toast.success('New credentials copied to clipboard!');
+                   if (navigator.clipboard && window.isSecureContext) {
+                     navigator.clipboard.writeText(text).then(() => {
+                       toast.success('New credentials copied to clipboard!');
+                     }).catch(() => {
+                       // Fallback for older browsers
+                       copyToClipboardFallback(text);
+                     });
+                   } else {
+                     // Fallback for non-secure contexts
+                     copyToClipboardFallback(text);
+                   }
                  }}
                  className="copy-btn"
                >

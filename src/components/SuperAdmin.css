@@ -719,9 +719,29 @@
   color: white;
 }
 
-.copy-btn:hover {
-  background: #3182ce;
-  transform: translateY(-1px);
+ .copy-btn:hover {
+   background: #3182ce;
+   transform: translateY(-1px);
+ }
+
+.credentials-text-backup {
+  background: #fef5e7;
+  border: 1px solid #f6ad55;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 16px 0;
+}
+
+.credentials-text-backup p {
+  color: #744210;
+  font-size: 14px;
+  margin: 4px 0;
+  font-family: 'Courier New', monospace;
+}
+
+.credentials-text-backup p:first-child {
+  font-weight: 600;
+  margin-bottom: 8px;
 }
 
 /* Responsive Design */

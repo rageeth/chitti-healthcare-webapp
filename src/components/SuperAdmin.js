@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import api from '../api/axios';
+import './SuperAdmin.css';
 
 const SuperAdmin = () => {
   const [pendingRegistrations, setPendingRegistrations] = useState([]);
@@ -11,6 +12,7 @@ const SuperAdmin = () => {
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [adminDetails, setAdminDetails] = useState({});
   const [showAdminDetails, setShowAdminDetails] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const handleLogout = useCallback(() => {
     localStorage.removeItem('superAdminToken');
@@ -92,6 +94,9 @@ const SuperAdmin = () => {
   };
 
   const handleApprove = async (registrationId) => {
+    if (isProcessing) return;
+    setIsProcessing(true);
+    
     try {
       console.log('✅ Approving registration:', registrationId);
       
@@ -101,24 +106,25 @@ const SuperAdmin = () => {
       const response = await api.post(`/healthcare/admin/approve-registration/${registrationId}`, {}, { headers });
       
       if (response.data.success) {
-        toast.success('Registration approved successfully! Admin credentials sent via email.');
-        console.log('🔑 Admin credentials created:', response.data.admin_credentials);
+        toast.success('Registration approved successfully!');
         fetchData(); // Refresh data
+      } else {
+        toast.error('Failed to approve registration');
       }
     } catch (error) {
       console.error('❌ Error approving registration:', error);
-      if (error.response?.status === 401) {
-        toast.error('Session expired. Please login again.');
-        handleLogout();
-      } else {
-        toast.error('Failed to approve registration.');
-      }
+      toast.error('Failed to approve registration. Please try again.');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   const handleReject = async (registrationId, reason) => {
+    if (isProcessing) return;
+    setIsProcessing(true);
+    
     try {
-      console.log('❌ Rejecting registration:', registrationId, reason);
+      console.log('❌ Rejecting registration:', registrationId, 'Reason:', reason);
       
       const token = localStorage.getItem('superAdminToken');
       const headers = { Authorization: `Bearer ${token}` };
@@ -128,21 +134,23 @@ const SuperAdmin = () => {
       }, { headers });
       
       if (response.data.success) {
-        toast.success('Registration rejected.');
+        toast.success('Registration rejected successfully!');
         fetchData(); // Refresh data
+      } else {
+        toast.error('Failed to reject registration');
       }
     } catch (error) {
       console.error('❌ Error rejecting registration:', error);
-      if (error.response?.status === 401) {
-        toast.error('Session expired. Please login again.');
-        handleLogout();
-      } else {
-        toast.error('Failed to reject registration.');
-      }
+      toast.error('Failed to reject registration. Please try again.');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   const handleResetPassword = async (adminId) => {
+    if (isProcessing) return;
+    setIsProcessing(true);
+    
     try {
       console.log('🔑 Resetting password for admin:', adminId);
       
@@ -152,23 +160,21 @@ const SuperAdmin = () => {
       const response = await api.post(`/healthcare/admin/reset-password/${adminId}`, {}, { headers });
       
       if (response.data.success) {
-        toast.success('Password reset successfully! New credentials sent via email.');
-        console.log('🔑 New password generated:', response.data.new_password);
+        toast.success('Password reset successfully! New password sent to admin email.');
+      } else {
+        toast.error('Failed to reset password');
       }
     } catch (error) {
       console.error('❌ Error resetting password:', error);
-      if (error.response?.status === 401) {
-        toast.error('Session expired. Please login again.');
-        handleLogout();
-      } else {
-        toast.error('Failed to reset password.');
-      }
+      toast.error('Failed to reset password. Please try again.');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   const handleViewAdminDetails = async (adminId) => {
     try {
-      console.log('👤 Fetching admin details:', adminId);
+      console.log('👤 Viewing admin details:', adminId);
       
       const token = localStorage.getItem('superAdminToken');
       const headers = { Authorization: `Bearer ${token}` };
@@ -178,26 +184,27 @@ const SuperAdmin = () => {
       if (response.data.success) {
         setAdminDetails(response.data.admin);
         setShowAdminDetails(true);
+      } else {
+        toast.error('Failed to load admin details');
       }
     } catch (error) {
-      console.error('❌ Error fetching admin details:', error);
-      if (error.response?.status === 401) {
-        toast.error('Session expired. Please login again.');
-        handleLogout();
-      } else {
-        toast.error('Failed to fetch admin details.');
-      }
+      console.error('❌ Error loading admin details:', error);
+      toast.error('Failed to load admin details. Please try again.');
     }
   };
 
   // Login Form
   if (!isLoggedIn) {
     return (
-      <div className="login-container">
-        <div className="login-card">
-          <h1>👑 Super Admin Login</h1>
+      <div className="super-admin-login">
+        <div className="login-container">
+          <div className="login-header">
+            <div className="crown-icon">👑</div>
+            <h1>Super Admin Login</h1>
+            <p>Access the healthcare provider management system</p>
+          </div>
           
-          <form onSubmit={handleLogin}>
+          <form onSubmit={handleLogin} className="login-form">
             <div className="form-group">
               <label htmlFor="email">Email</label>
               <input
@@ -205,11 +212,11 @@ const SuperAdmin = () => {
                 id="email"
                 value={loginForm.email}
                 onChange={(e) => setLoginForm({...loginForm, email: e.target.value})}
-                placeholder="superadmin@chitti.com"
+                placeholder="Enter your email"
                 required
               />
             </div>
-
+            
             <div className="form-group">
               <label htmlFor="password">Password</label>
               <input
@@ -217,206 +224,264 @@ const SuperAdmin = () => {
                 id="password"
                 value={loginForm.password}
                 onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
-                placeholder="superadmin123"
+                placeholder="Enter your password"
                 required
               />
             </div>
-
-            <button type="submit" className="btn" disabled={isLoading}>
+            
+            <button type="submit" className="login-btn" disabled={isLoading}>
               {isLoading ? 'Logging in...' : 'Login as Super Admin'}
             </button>
           </form>
-
-          <div style={{ marginTop: '1rem', textAlign: 'center' }}>
-            <p style={{ fontSize: '0.9rem', color: '#666' }}>
-              <strong>Demo Credentials:</strong><br />
-              Email: superadmin@chitti.com<br />
-              Password: superadmin123
-            </p>
+          
+          <div className="demo-credentials">
+            <h3>Demo Credentials:</h3>
+            <p><strong>Email:</strong> superadmin@chitti.com</p>
+            <p><strong>Password:</strong> superadmin123</p>
           </div>
         </div>
       </div>
     );
   }
 
-  if (isLoading) {
-    return (
-      <div className="dashboard-container">
-        <div style={{ textAlign: 'center', padding: '2rem' }}>
-          <h2>Loading Super Admin Dashboard...</h2>
-        </div>
-      </div>
-    );
-  }
-
+  // Dashboard
   return (
-    <div className="dashboard-container">
-      <div className="dashboard-header">
-        <h1>👑 Super Admin Dashboard</h1>
-        <button onClick={handleLogout} className="btn-secondary">
-          Logout
-        </button>
-      </div>
-
-      <div className="dashboard-stats">
-        <div className="stat-card">
-          <h3>Pending Approvals</h3>
-          <p className="stat-number">{pendingRegistrations.length}</p>
+    <div className="super-admin-dashboard">
+      <header className="dashboard-header">
+        <div className="header-content">
+          <div className="header-left">
+            <div className="crown-icon">👑</div>
+            <h1>Super Admin Dashboard</h1>
+          </div>
+          <button onClick={handleLogout} className="logout-btn">
+            <span>🚪</span> Logout
+          </button>
         </div>
-        <div className="stat-card">
-          <h3>Approved Providers</h3>
-          <p className="stat-number">{approvedProviders.length}</p>
-        </div>
-        <div className="stat-card">
-          <h3>Total Facilities</h3>
-          <p className="stat-number">{pendingRegistrations.length + approvedProviders.length}</p>
-        </div>
-      </div>
-
-      <div className="dashboard-tabs">
-        <button 
-          className={`tab-button ${activeTab === 'pending' ? 'active' : ''}`}
-          onClick={() => setActiveTab('pending')}
-        >
-          Pending Approvals ({pendingRegistrations.length})
-        </button>
-        <button 
-          className={`tab-button ${activeTab === 'approved' ? 'active' : ''}`}
-          onClick={() => setActiveTab('approved')}
-        >
-          Approved Providers ({approvedProviders.length})
-        </button>
-      </div>
+      </header>
 
       <div className="dashboard-content">
-        {activeTab === 'pending' && (
-          <div className="registrations-list">
-            <h2>Pending Registration Requests</h2>
-            {pendingRegistrations.length === 0 ? (
-              <p style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
-                No pending registration requests.
-              </p>
-            ) : (
-              pendingRegistrations.map((registration) => (
-                <div key={registration.id} className="registration-card">
-                  <div className="registration-header">
-                    <h3>{registration.name}</h3>
-                    <span className="facility-type">{registration.type}</span>
-                  </div>
-                  <div className="registration-details">
-                    <p><strong>Email:</strong> {registration.email}</p>
-                    <p><strong>Phone:</strong> {registration.phone}</p>
-                    <p><strong>Address:</strong> {registration.address}</p>
-                    {registration.website && (
-                      <p><strong>Website:</strong> {registration.website}</p>
-                    )}
-                    <p><strong>Submitted:</strong> {new Date(registration.created_at).toLocaleDateString()}</p>
-                  </div>
-                  <div className="registration-actions">
-                    <button 
-                      onClick={() => handleApprove(registration.id)}
-                      className="btn-approve"
-                    >
-                      ✅ Approve
-                    </button>
-                    <button 
-                      onClick={() => handleReject(registration.id, 'Rejected by admin')}
-                      className="btn-reject"
-                    >
-                      ❌ Reject
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
+        {/* Stats Cards */}
+        <div className="stats-grid">
+          <div className="stat-card pending">
+            <div className="stat-icon">⏳</div>
+            <div className="stat-content">
+              <h3>Pending Approvals</h3>
+              <div className="stat-number">{pendingRegistrations.length}</div>
+            </div>
           </div>
-        )}
-
-        {activeTab === 'approved' && (
-          <div className="providers-list">
-            <h2>Approved Healthcare Providers</h2>
-            {approvedProviders.length === 0 ? (
-              <p style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
-                No approved providers yet.
-              </p>
-            ) : (
-              approvedProviders.map((provider) => (
-                <div key={provider.id} className="provider-card">
-                  <div className="provider-header">
-                    <h3>{provider.name}</h3>
-                    <span className="facility-type">{provider.type}</span>
-                    <span className="status-approved">✅ Approved</span>
-                  </div>
-                  <div className="provider-details">
-                    <p><strong>Email:</strong> {provider.email}</p>
-                    <p><strong>Phone:</strong> {provider.phone}</p>
-                    <p><strong>Address:</strong> {provider.address}</p>
-                    {provider.website && (
-                      <p><strong>Website:</strong> {provider.website}</p>
-                    )}
-                    <p><strong>Approved:</strong> {new Date(provider.updated_at).toLocaleDateString()}</p>
-                  </div>
-                  <div className="provider-actions">
-                    <button 
-                      onClick={() => handleViewAdminDetails(provider.id)}
-                      className="btn-secondary"
-                      style={{ marginRight: '0.5rem' }}
-                    >
-                      👤 View Admin
-                    </button>
-                    <button 
-                      onClick={() => handleResetPassword(provider.id)}
-                      className="btn-warning"
-                    >
-                      🔑 Reset Password
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
+          
+          <div className="stat-card approved">
+            <div className="stat-icon">✅</div>
+            <div className="stat-content">
+              <h3>Approved Providers</h3>
+              <div className="stat-number">{approvedProviders.length}</div>
+            </div>
           </div>
-        )}
+          
+          <div className="stat-card total">
+            <div className="stat-icon">🏥</div>
+            <div className="stat-content">
+              <h3>Total Facilities</h3>
+              <div className="stat-number">{pendingRegistrations.length + approvedProviders.length}</div>
+            </div>
+          </div>
+        </div>
 
-        {/* Admin Details Modal */}
-        {showAdminDetails && (
-          <div className="modal-overlay" onClick={() => setShowAdminDetails(false)}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <h3>👤 Hospital Admin Details</h3>
-                <button onClick={() => setShowAdminDetails(false)} className="close-btn">×</button>
-              </div>
-              <div className="modal-body">
-                <div className="admin-details">
-                  <p><strong>Admin Name:</strong> {adminDetails.name}</p>
-                  <p><strong>Email:</strong> {adminDetails.email}</p>
-                  <p><strong>Phone:</strong> {adminDetails.phone}</p>
-                  <p><strong>Provider:</strong> {adminDetails.provider_name}</p>
-                  <p><strong>Provider Type:</strong> {adminDetails.provider_type}</p>
-                  <p><strong>Role:</strong> {adminDetails.role}</p>
-                  <p><strong>Created:</strong> {new Date(adminDetails.created_at).toLocaleDateString()}</p>
-                  {adminDetails.last_login && (
-                    <p><strong>Last Login:</strong> {new Date(adminDetails.last_login).toLocaleString()}</p>
+        {/* Tabs */}
+        <div className="tabs-container">
+          <div className="tabs">
+            <button 
+              className={`tab ${activeTab === 'pending' ? 'active' : ''}`}
+              onClick={() => setActiveTab('pending')}
+            >
+              Pending Approvals ({pendingRegistrations.length})
+            </button>
+            <button 
+              className={`tab ${activeTab === 'approved' ? 'active' : ''}`}
+              onClick={() => setActiveTab('approved')}
+            >
+              Approved Providers ({approvedProviders.length})
+            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="tab-content">
+          {isLoading ? (
+            <div className="loading">
+              <div className="spinner"></div>
+              <p>Loading data...</p>
+            </div>
+          ) : (
+            <>
+              {activeTab === 'pending' && (
+                <div className="pending-section">
+                  {pendingRegistrations.length === 0 ? (
+                    <div className="empty-state">
+                      <div className="empty-icon">🎉</div>
+                      <h3>No Pending Approvals</h3>
+                      <p>All healthcare provider registrations have been processed!</p>
+                    </div>
+                  ) : (
+                    <div className="registrations-grid">
+                      {pendingRegistrations.map((registration) => (
+                        <div key={registration.id} className="registration-card">
+                          <div className="card-header">
+                            <h3>{registration.name}</h3>
+                            <span className="provider-type">{registration.type}</span>
+                          </div>
+                          
+                          <div className="card-details">
+                            <div className="detail-item">
+                              <span className="label">📧 Email:</span>
+                              <span className="value">{registration.email}</span>
+                            </div>
+                            <div className="detail-item">
+                              <span className="label">📞 Phone:</span>
+                              <span className="value">{registration.phone}</span>
+                            </div>
+                            <div className="detail-item">
+                              <span className="label">📍 Address:</span>
+                              <span className="value">{registration.address}</span>
+                            </div>
+                            <div className="detail-item">
+                              <span className="label">📅 Submitted:</span>
+                              <span className="value">{new Date(registration.created_at).toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="card-actions">
+                            <button 
+                              onClick={() => handleApprove(registration.id)}
+                              className="approve-btn"
+                              disabled={isProcessing}
+                            >
+                              <span>✅</span> Approve
+                            </button>
+                            <button 
+                              onClick={() => handleReject(registration.id, 'Rejected by super admin')}
+                              className="reject-btn"
+                              disabled={isProcessing}
+                            >
+                              <span>❌</span> Reject
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
-                <div className="modal-actions">
-                  <button 
-                    onClick={() => handleResetPassword(adminDetails.id)}
-                    className="btn-warning"
-                  >
-                    🔑 Reset Password
-                  </button>
-                  <button 
-                    onClick={() => setShowAdminDetails(false)}
-                    className="btn-secondary"
-                  >
-                    Close
-                  </button>
+              )}
+
+              {activeTab === 'approved' && (
+                <div className="approved-section">
+                  {approvedProviders.length === 0 ? (
+                    <div className="empty-state">
+                      <div className="empty-icon">🏥</div>
+                      <h3>No Approved Providers</h3>
+                      <p>No healthcare providers have been approved yet.</p>
+                    </div>
+                  ) : (
+                    <div className="providers-grid">
+                      {approvedProviders.map((provider) => (
+                        <div key={provider.id} className="provider-card">
+                          <div className="card-header">
+                            <h3>{provider.name}</h3>
+                            <span className="provider-type">{provider.type}</span>
+                          </div>
+                          
+                          <div className="card-details">
+                            <div className="detail-item">
+                              <span className="label">📧 Email:</span>
+                              <span className="value">{provider.email}</span>
+                            </div>
+                            <div className="detail-item">
+                              <span className="label">📞 Phone:</span>
+                              <span className="value">{provider.phone}</span>
+                            </div>
+                            <div className="detail-item">
+                              <span className="label">📍 Address:</span>
+                              <span className="value">{provider.address}</span>
+                            </div>
+                            <div className="detail-item">
+                              <span className="label">📅 Approved:</span>
+                              <span className="value">{new Date(provider.updated_at).toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="card-actions">
+                            <button 
+                              onClick={() => handleViewAdminDetails(provider.id)}
+                              className="view-btn"
+                            >
+                              <span>👤</span> View Admin
+                            </button>
+                            <button 
+                              onClick={() => handleResetPassword(provider.id)}
+                              className="reset-btn"
+                              disabled={isProcessing}
+                            >
+                              <span>🔑</span> Reset Password
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Admin Details Modal */}
+      {showAdminDetails && (
+        <div className="modal-overlay" onClick={() => setShowAdminDetails(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Admin Details</h2>
+              <button onClick={() => setShowAdminDetails(false)} className="close-btn">×</button>
+            </div>
+            <div className="modal-body">
+              <div className="admin-details">
+                <div className="detail-row">
+                  <span className="label">Name:</span>
+                  <span className="value">{adminDetails.name}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="label">Email:</span>
+                  <span className="value">{adminDetails.email}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="label">Provider:</span>
+                  <span className="value">{adminDetails.provider_name}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="label">Provider Type:</span>
+                  <span className="value">{adminDetails.provider_type}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="label">Created:</span>
+                  <span className="value">{new Date(adminDetails.created_at).toLocaleString()}</span>
                 </div>
               </div>
             </div>
+            <div className="modal-footer">
+              <button 
+                onClick={() => handleResetPassword(adminDetails.id)}
+                className="reset-btn"
+                disabled={isProcessing}
+              >
+                <span>🔑</span> Reset Password
+              </button>
+              <button onClick={() => setShowAdminDetails(false)} className="cancel-btn">
+                Close
+              </button>
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -12,46 +12,15 @@ const SuperAdmin = () => {
   const [adminDetails, setAdminDetails] = useState({});
   const [showAdminDetails, setShowAdminDetails] = useState(false);
 
-  const checkAuthStatus = useCallback(() => {
-    const token = localStorage.getItem('superAdminToken');
-    if (token) {
-      setIsLoggedIn(true);
-      fetchData();
-    } else {
-      setIsLoading(false);
-    }
+  const handleLogout = useCallback(() => {
+    localStorage.removeItem('superAdminToken');
+    setIsLoggedIn(false);
+    setPendingRegistrations([]);
+    setApprovedProviders([]);
+    toast.success('Logged out successfully');
   }, []);
 
-  useEffect(() => {
-    console.log('👑 Super Admin Dashboard loaded');
-    checkAuthStatus();
-  }, [checkAuthStatus]);
-
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    
-    try {
-      console.log('🔐 Super admin login attempt:', loginForm.email);
-      
-      const response = await axios.post('/healthcare/super-admin/login', loginForm);
-      
-      if (response.data.success) {
-        console.log('✅ Super admin login successful');
-        localStorage.setItem('superAdminToken', response.data.token);
-        setIsLoggedIn(true);
-        toast.success('Super admin login successful!');
-        fetchData();
-      }
-    } catch (error) {
-      console.error('❌ Super admin login error:', error);
-      toast.error('Login failed. Please check your credentials.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       console.log('📊 Fetching super admin data...');
       
@@ -78,6 +47,45 @@ const SuperAdmin = () => {
       } else {
         toast.error('Failed to load data. Please refresh the page.');
       }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [handleLogout]);
+
+  const checkAuthStatus = useCallback(() => {
+    const token = localStorage.getItem('superAdminToken');
+    if (token) {
+      setIsLoggedIn(true);
+      fetchData();
+    } else {
+      setIsLoading(false);
+    }
+  }, [fetchData]);
+
+  useEffect(() => {
+    console.log('👑 Super Admin Dashboard loaded');
+    checkAuthStatus();
+  }, [checkAuthStatus]);
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    try {
+      console.log('🔐 Super admin login attempt:', loginForm.email);
+      
+      const response = await axios.post('/healthcare/super-admin/login', loginForm);
+      
+      if (response.data.success) {
+        console.log('✅ Super admin login successful');
+        localStorage.setItem('superAdminToken', response.data.token);
+        setIsLoggedIn(true);
+        toast.success('Super admin login successful!');
+        fetchData();
+      }
+    } catch (error) {
+      console.error('❌ Super admin login error:', error);
+      toast.error('Login failed. Please check your credentials.');
     } finally {
       setIsLoading(false);
     }
@@ -180,14 +188,6 @@ const SuperAdmin = () => {
         toast.error('Failed to fetch admin details.');
       }
     }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('superAdminToken');
-    setIsLoggedIn(false);
-    setPendingRegistrations([]);
-    setApprovedProviders([]);
-    toast.success('Logged out successfully');
   };
 
   // Login Form
